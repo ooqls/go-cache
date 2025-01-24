@@ -22,6 +22,8 @@ type CacheOptions struct {
 	defaultStore store.StoreInterface
 }
 
+type Cache[T any] cache.CacheInterface[T]
+
 func SetRedis(redisOpt RedisOptions) {
 	m.Lock()
 	defer m.Unlock()
