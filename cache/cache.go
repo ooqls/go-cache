@@ -1,15 +1,17 @@
 package cache
 
 import (
+	"bytes"
+	"context"
+	"encoding/gob"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/eko/gocache/lib/v4/cache"
 	"github.com/eko/gocache/lib/v4/store"
 	gocache_store "github.com/eko/gocache/store/go_cache/v4"
-	"github.com/eko/gocache/store/redis/v4"
 	gocache "github.com/patrickmn/go-cache"
-	goredis "github.com/redis/go-redis/v9"
 )
 
 var m sync.Mutex
@@ -22,28 +24,51 @@ type CacheOptions struct {
 	defaultStore store.StoreInterface
 }
 
-type Cache[T any] cache.CacheInterface[T]
+func New[V any](c *cache.Cache[[]byte]) *Cache[V] {
+	return &Cache[V]{
+		c: cache.Cache[[]byte](*c),
+	}
+}
+
+type Cache[T any] struct {
+	c cache.Cache[[]byte]
+}
+
+func (c *Cache[T]) Set(ctx context.Context, key string, val T) error {
+	var buff bytes.Buffer
+	enc := gob.NewEncoder(&buff)
+	err := enc.Encode(val)
+	if err != nil {
+		return err
+	}
+
+	return c.c.Set(ctx, key, buff.Bytes())
+}
+
+func (c *Cache[T]) Get(ctx context.Context, key string) (*T, error) {
+	payload, err := c.c.Get(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get item from cache: %v", err)
+	}
+
+	dec := gob.NewDecoder(bytes.NewBuffer(payload))
+	var obj T
+	err = dec.Decode(&obj)
+	return &obj, err
+
+}
+
+func (c *Cache[T]) Clear(ctx context.Context) error {
+	return c.c.Clear(ctx)
+}
+
+func (c *Cache[T]) Delete(ctx context.Context, key string) error {
+	return c.c.Delete(ctx, key)
+}
 
 func SetRedis(redisOpt RedisOptions) {
 	m.Lock()
 	defer m.Unlock()
 
 	opt.redisOptions = &redisOpt
-}
-
-func NewRedisCache[V any]() *cache.Cache[V] {
-	m.Lock()
-	defer m.Unlock()
-
-	if opt.redisOptions == nil {
-		panic("redis options is not set")
-	}
-
-	c := cache.New[V](redis.NewRedis(goredis.NewClient(opt.redisOptions.GetGoRedisOptions())))
-	return c
-}
-
-func NewCache[V any]() *cache.Cache[V] {
-	c := cache.New[V](opt.defaultStore)
-	return c
 }
