@@ -5,11 +5,11 @@ go 1.23.0
 toolchain go1.24.2
 
 require (
-	github.com/braumsmilk/go-log v0.1.0
 	github.com/eko/gocache/lib/v4 v4.1.6
 	github.com/eko/gocache/store/go_cache/v4 v4.2.2
 	github.com/eko/gocache/store/redis/v4 v4.2.2
 	github.com/ooqls/go-db v1.0.6
+	github.com/ooqls/go-log v0.1.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redis/go-redis/v9 v9.7.1
 	go.uber.org/zap v1.27.0

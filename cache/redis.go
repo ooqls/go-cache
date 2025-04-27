@@ -3,7 +3,7 @@ package cache
 import (
 	"crypto/tls"
 
-	"github.com/braumsmilk/go-log"
+	"github.com/ooqls/go-log"
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )

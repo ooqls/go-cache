@@ -6,23 +6,11 @@ import (
 	"encoding/gob"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/eko/gocache/lib/v4/cache"
-	"github.com/eko/gocache/lib/v4/store"
-	gocache_store "github.com/eko/gocache/store/go_cache/v4"
-	gocache "github.com/patrickmn/go-cache"
 )
 
 var m sync.Mutex
-var opt CacheOptions = CacheOptions{
-	defaultStore: gocache_store.NewGoCache(gocache.New(time.Minute*10, time.Minute*20)),
-}
-
-type CacheOptions struct {
-	redisOptions *RedisOptions
-	defaultStore store.StoreInterface
-}
 
 func New[V any](c *cache.Cache[[]byte]) *Cache[V] {
 	return &Cache[V]{
@@ -64,11 +52,4 @@ func (c *Cache[T]) Clear(ctx context.Context) error {
 
 func (c *Cache[T]) Delete(ctx context.Context, key string) error {
 	return c.c.Delete(ctx, key)
-}
-
-func SetRedis(redisOpt RedisOptions) {
-	m.Lock()
-	defer m.Unlock()
-
-	opt.redisOptions = &redisOpt
 }
