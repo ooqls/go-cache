@@ -1,4 +1,4 @@
-module github.com/braumsmilk/go-cache
+module github.com/ooqls/go-cache
 
 go 1.23.0
 
