@@ -5,12 +5,9 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
-	"sync"
 
 	"github.com/eko/gocache/lib/v4/cache"
 )
-
-var m sync.Mutex
 
 func New[V any](c *cache.Cache[[]byte]) *Cache[V] {
 	return &Cache[V]{

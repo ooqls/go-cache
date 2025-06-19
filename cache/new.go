@@ -10,14 +10,14 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 )
 
-func NewMemCache[T any]() *cache.Cache[T] {
+func NewMemCache() *cache.Cache[[]byte] {
 	memCache := gocache.New(time.Minute*5, time.Minute*10)
 	memStore := gocache_store.NewGoCache(memCache)
-	return cache.New[T](memStore)
+	return cache.New[[]byte](memStore)
 }
 
-func NewRedisCache[T any]() *cache.Cache[T] {
+func NewRedisCache() *cache.Cache[[]byte] {
 	r := redis.GetConnection()
 	redisStore := redis_store.NewRedis(r)
-	return cache.New[T](redisStore)
+	return cache.New[[]byte](redisStore)
 }
