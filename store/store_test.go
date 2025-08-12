@@ -17,22 +17,29 @@ type Obj struct {
 func TestRedisStore(t *testing.T) {
 	testutils.InitRedis()
 
-	store := NewGenericStore[Obj](redis.GetConnection(), 10*time.Second)
+	store := NewGenericStore(redis.GetConnection(), 10*time.Second)
 
 	obj := Obj{V: "value"}
 	err := store.Set(context.Background(), "key", obj)
 	assert.Nil(t, err)
 
-	updatedObj, err := store.Get(context.Background(), "key")
+	var updatedObj Obj
+	err = store.Get(context.Background(), "key", &updatedObj)
 	assert.Nil(t, err)
 	assert.Equal(t, obj.V, updatedObj.V)
 
-	err = store.Update(context.Background(), "key", func(obj *Obj) {
+	err = store.Update(context.Background(), "key", func(fn func(target any) error) (any, error) {
+		var obj Obj
+
+		err := fn(&obj)
+		assert.Nil(t, err)
+
 		obj.V = "updated value"
+		return obj, nil
 	})
 	assert.Nil(t, err)
 
-	updatedObj, err = store.Get(context.Background(), "key")
+	err = store.Get(context.Background(), "key", &updatedObj)
 	assert.Nil(t, err)
 	assert.Equal(t, "updated value", updatedObj.V)
 
