@@ -8,6 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+//go:generate mockgen -source=store.go -destination=store_mock.go -package=store GenericInterface
 type GenericInterface[T any] interface {
 	Set(ctx context.Context, key string, value T) error
 	Get(ctx context.Context, key string) (*T, error)
