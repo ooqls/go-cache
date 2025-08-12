@@ -17,7 +17,7 @@ type Obj struct {
 func TestRedisStore(t *testing.T) {
 	testutils.InitRedis()
 
-	store := NewGenericStore(redis.GetConnection(), 10*time.Second)
+	store := NewRedisStore(redis.GetConnection(), 10*time.Second)
 
 	obj := Obj{V: "value"}
 	err := store.Set(context.Background(), "key", obj)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/ooqls/go-cache/cache"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -16,16 +17,49 @@ type GenericInterface interface {
 	Delete(ctx context.Context, key string) error
 }
 
-type GenericStore struct {
+type MemStore struct {
+	c *cache.GenericCache
+}
+
+func NewMemStore(ttl time.Duration) GenericInterface {
+	return &MemStore{
+		c: cache.NewGenericCache(cache.NewMemCache()),
+	}
+}
+
+func (s *MemStore) Set(ctx context.Context, key string, value any) error {
+	return s.c.Set(ctx, key, value)
+}
+
+func (s *MemStore) Get(ctx context.Context, key string, target any) error {
+	return s.c.Get(ctx, key, target)
+}
+
+func (s *MemStore) Update(ctx context.Context, key string, fn func(func(target any) error) (any, error)) error {
+	target, err := fn(func(target any) error {
+		return s.c.Get(ctx, key, target)
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.c.Set(ctx, key, target)
+}
+
+func (s *MemStore) Delete(ctx context.Context, key string) error {
+	return s.c.Delete(ctx, key)
+}
+
+type RedisStore struct {
 	db  *redis.Client
 	ttl time.Duration
 }
 
-func NewGenericStore(db *redis.Client, ttl time.Duration) GenericInterface {
-	return &GenericStore{db: db, ttl: ttl}
+func NewRedisStore(db *redis.Client, ttl time.Duration) GenericInterface {
+	return &RedisStore{db: db, ttl: ttl}
 }
 
-func (s *GenericStore) Set(ctx context.Context, key string, value any) error {
+func (s *RedisStore) Set(ctx context.Context, key string, value any) error {
 	json, err := json.Marshal(value)
 	if err != nil {
 		return err
@@ -34,7 +68,7 @@ func (s *GenericStore) Set(ctx context.Context, key string, value any) error {
 	return s.db.Set(ctx, key, json, s.ttl).Err()
 }
 
-func (s *GenericStore) Get(ctx context.Context, key string, target any) error {
+func (s *RedisStore) Get(ctx context.Context, key string, target any) error {
 	res, err := s.db.Get(ctx, key).Result()
 	if err != nil {
 		return err
@@ -44,7 +78,7 @@ func (s *GenericStore) Get(ctx context.Context, key string, target any) error {
 	return err
 }
 
-func (s *GenericStore) Update(ctx context.Context, key string, fn func(func(target any) error) (any, error)) error {
+func (s *RedisStore) Update(ctx context.Context, key string, fn func(func(target any) error) (any, error)) error {
 	return s.db.Watch(ctx, func(tx *redis.Tx) error {
 		res, err := tx.Get(ctx, key).Result()
 		if err != nil {
@@ -68,6 +102,6 @@ func (s *GenericStore) Update(ctx context.Context, key string, fn func(func(targ
 	}, key)
 }
 
-func (s *GenericStore) Delete(ctx context.Context, key string) error {
+func (s *RedisStore) Delete(ctx context.Context, key string) error {
 	return s.db.Del(ctx, key).Err()
 }
