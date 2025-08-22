@@ -1,8 +1,9 @@
 package store
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/gob"
 	"time"
 
 	"github.com/ooqls/go-cache/cache"
@@ -60,12 +61,14 @@ func NewRedisStore(db *redis.Client, ttl time.Duration) GenericInterface {
 }
 
 func (s *RedisStore) Set(ctx context.Context, key string, value any) error {
-	json, err := json.Marshal(value)
+	var buff bytes.Buffer
+	enc := gob.NewEncoder(&buff)
+	err := enc.Encode(value)
 	if err != nil {
 		return err
 	}
 
-	return s.db.Set(ctx, key, json, s.ttl).Err()
+	return s.db.Set(ctx, key, buff.Bytes(), s.ttl).Err()
 }
 
 func (s *RedisStore) Get(ctx context.Context, key string, target any) error {
@@ -74,8 +77,8 @@ func (s *RedisStore) Get(ctx context.Context, key string, target any) error {
 		return err
 	}
 
-	err = json.Unmarshal([]byte(res), target)
-	return err
+	dec := gob.NewDecoder(bytes.NewReader([]byte(res)))
+	return dec.Decode(target)
 }
 
 func (s *RedisStore) Update(ctx context.Context, key string, fn func(func(target any) error) (any, error)) error {
@@ -86,18 +89,21 @@ func (s *RedisStore) Update(ctx context.Context, key string, fn func(func(target
 		}
 
 		target, err := fn(func(target any) error {
-			return json.Unmarshal([]byte(res), target)
+			dec := gob.NewDecoder(bytes.NewReader([]byte(res)))
+			return dec.Decode(target)
 		})
 		if err != nil {
 			return err
 		}
 
-		b, err := json.Marshal(target)
+		var buff bytes.Buffer
+		enc := gob.NewEncoder(&buff)
+		err = enc.Encode(target)
 		if err != nil {
 			return err
 		}
 
-		_, err = tx.Set(ctx, key, b, s.ttl).Result()
+		_, err = tx.Set(ctx, key, buff.Bytes(), s.ttl).Result()
 		return err
 	}, key)
 }

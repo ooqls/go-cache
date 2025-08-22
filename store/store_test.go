@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ooqls/go-cache/cache"
 	"github.com/ooqls/go-db/redis"
 	"github.com/ooqls/go-db/testutils"
@@ -43,6 +44,10 @@ func TestRedisStore(t *testing.T) {
 	err = store.Get(context.Background(), "key", &updatedObj)
 	assert.Nil(t, err)
 	assert.Equal(t, "updated value", updatedObj.V)
+
+	err = store.Get(context.Background(), uuid.New().String(), &updatedObj)
+	assert.NotNil(t, err)
+	assert.True(t, cache.IsCacheMissErr(err))
 }
 
 func TestMemStore(t *testing.T) {
@@ -66,6 +71,7 @@ func TestMemStore(t *testing.T) {
 		obj.V = "updated value"
 		return obj, nil
 	})
+	assert.Nil(t, err)
 
 	err = store.Get(context.Background(), "key", &updatedObj)
 	assert.Nil(t, err)
