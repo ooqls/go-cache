@@ -12,16 +12,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type OtherObj struct {
+	Id uuid.UUID
+	Ts time.Time
+	V  string
+}
+
+type MyAlias = OtherObj
+
 type Obj struct {
-	V string `json:"v"`
+	V  string
+	Ts time.Time
+	id uuid.UUID
+	Other MyAlias
 }
 
 func TestRedisStore(t *testing.T) {
 	testutils.InitRedis()
 
-	store := NewRedisStore(redis.GetConnection(), 10*time.Second)
+	var store GenericInterface = NewRedisStore(redis.GetConnection(), 450*time.Second)
 
-	obj := Obj{V: "value"}
+	obj := Obj{V: "value", Ts: time.Now(), id: uuid.New(), Other: MyAlias{Id: uuid.New(), Ts: time.Now(), V: "other"}}
 	err := store.Set(context.Background(), "key", obj)
 	assert.Nil(t, err)
 
