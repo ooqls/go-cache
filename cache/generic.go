@@ -4,18 +4,25 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"fmt"
 
 	"github.com/eko/gocache/lib/v4/cache"
 )
 
-func NewGenericCache(c *cache.Cache[[]byte]) *GenericCache {
+func NewGenericCache(cacheKey string, c *cache.Cache[[]byte]) *GenericCache {
 	return &GenericCache{
-		c: c,
+		cacheKey: cacheKey,
+		c:        c,
 	}
 }
 
 type GenericCache struct {
-	c *cache.Cache[[]byte]
+	cacheKey string
+	c        *cache.Cache[[]byte]
+}
+
+func (c *GenericCache) getKey(localKey string) string {
+	return fmt.Sprintf("%s/%s", c.cacheKey, localKey)
 }
 
 func (c *GenericCache) Set(ctx context.Context, key string, val any) error {
@@ -25,12 +32,12 @@ func (c *GenericCache) Set(ctx context.Context, key string, val any) error {
 	if err != nil {
 		return err
 	}
-
-	return c.c.Set(ctx, key, buff.Bytes())
+	k := c.getKey(key)
+	return c.c.Set(ctx, k, buff.Bytes())
 }
 
 func (c *GenericCache) Get(ctx context.Context, key string, target any) error {
-	b, err := c.c.Get(ctx, key)
+	b, err := c.c.Get(ctx, c.getKey(key))
 	if err != nil {
 		return err
 	}
@@ -40,7 +47,7 @@ func (c *GenericCache) Get(ctx context.Context, key string, target any) error {
 }
 
 func (c *GenericCache) Delete(ctx context.Context, key string) error {
-	return c.c.Delete(ctx, key)
+	return c.c.Delete(ctx, c.getKey(key))
 }
 
 func (c *GenericCache) Clear(ctx context.Context) error {

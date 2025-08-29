@@ -9,7 +9,7 @@ import (
 
 func TestSetGeneric(t *testing.T) {
 
-	c := NewGenericCache(NewMemCache())
+	c := NewGenericCache("test", NewMemCache())
 
 	err := c.Set(context.Background(), "key", "value")
 	assert.Nil(t, err)

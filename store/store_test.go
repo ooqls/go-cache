@@ -31,7 +31,7 @@ func TestRedisStore(t *testing.T) {
 	testutils.InitRedis()
 	Register(Obj{}, MyAlias{})
 
-	var store GenericInterface = NewRedisStore(redis.GetConnection(), 450*time.Second)
+	var store GenericInterface = NewRedisStore(redis.GetConnection(), 450*time.Second, "test")
 
 	err := store.Get(context.Background(), "key", &Obj{})
 	assert.NotNilf(t, err, "expected cache miss error, got %v", err)
@@ -67,7 +67,7 @@ func TestRedisStore(t *testing.T) {
 }
 
 func TestMemStore(t *testing.T) {
-	store := NewMemStore(10 * time.Second)
+	store := NewMemStore("test", 10*time.Second)
 
 	obj := Obj{V: "value"}
 	err := store.Set(context.Background(), "key", obj)
@@ -95,7 +95,7 @@ func TestMemStore(t *testing.T) {
 }
 
 func TestMemStore_Get_NotFound(t *testing.T) {
-	store := NewMemStore(10 * time.Second)
+	store := NewMemStore("test", 10*time.Second)
 
 	var obj Obj
 	err := store.Get(context.Background(), "key", &obj)

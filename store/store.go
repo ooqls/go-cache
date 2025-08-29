@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"fmt"
 	"time"
 
 	"github.com/ooqls/go-cache/cache"
@@ -32,9 +33,9 @@ type MemStore struct {
 	c *cache.GenericCache
 }
 
-func NewMemStore(ttl time.Duration) GenericInterface {
+func NewMemStore(storeName string, ttl time.Duration) GenericInterface {
 	return &MemStore{
-		c: cache.NewGenericCache(cache.NewMemCache()),
+		c: cache.NewGenericCache(storeName, cache.NewMemCache()),
 	}
 }
 
@@ -62,12 +63,17 @@ func (s *MemStore) Delete(ctx context.Context, key string) error {
 }
 
 type RedisStore struct {
-	db  *redis.Client
-	ttl time.Duration
+	db        *redis.Client
+	ttl       time.Duration
+	storeName string
 }
 
-func NewRedisStore(db *redis.Client, ttl time.Duration) GenericInterface {
-	return &RedisStore{db: db, ttl: ttl}
+func NewRedisStore(db *redis.Client, ttl time.Duration, storeName string) GenericInterface {
+	return &RedisStore{db: db, ttl: ttl, storeName: storeName}
+}
+
+func (s *RedisStore) getKey(key string) string {
+	return fmt.Sprintf("%s/%s", s.storeName, key)
 }
 
 func (s *RedisStore) Set(ctx context.Context, key string, value any) error {
@@ -78,11 +84,11 @@ func (s *RedisStore) Set(ctx context.Context, key string, value any) error {
 		return err
 	}
 
-	return s.db.Set(ctx, key, buff.Bytes(), s.ttl).Err()
+	return s.db.Set(ctx, s.getKey(key), buff.Bytes(), s.ttl).Err()
 }
 
 func (s *RedisStore) Get(ctx context.Context, key string, target any) error {
-	res, err := s.db.Get(ctx, key).Result()
+	res, err := s.db.Get(ctx, s.getKey(key)).Result()
 	if err != nil {
 		return err
 	}
@@ -93,7 +99,7 @@ func (s *RedisStore) Get(ctx context.Context, key string, target any) error {
 
 func (s *RedisStore) Update(ctx context.Context, key string, fn func(func(target any) error) (any, error)) error {
 	return s.db.Watch(ctx, func(tx *redis.Tx) error {
-		res, err := tx.Get(ctx, key).Result()
+		res, err := tx.Get(ctx, s.getKey(key)).Result()
 		if err != nil {
 			return err
 		}
@@ -113,11 +119,11 @@ func (s *RedisStore) Update(ctx context.Context, key string, fn func(func(target
 			return err
 		}
 
-		_, err = tx.Set(ctx, key, buff.Bytes(), s.ttl).Result()
+		_, err = tx.Set(ctx, s.getKey(key), buff.Bytes(), s.ttl).Result()
 		return err
 	}, key)
 }
 
 func (s *RedisStore) Delete(ctx context.Context, key string) error {
-	return s.db.Del(ctx, key).Err()
+	return s.db.Del(ctx, s.getKey(key)).Err()
 }
