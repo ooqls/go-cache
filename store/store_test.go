@@ -29,11 +29,16 @@ type Obj struct {
 
 func TestRedisStore(t *testing.T) {
 	testutils.InitRedis()
+	Register(Obj{}, MyAlias{})
 
 	var store GenericInterface = NewRedisStore(redis.GetConnection(), 450*time.Second)
 
-	obj := Obj{V: "value", Ts: time.Now(), id: uuid.New(), Other: MyAlias{Id: uuid.New(), Ts: time.Now(), V: "other"}}
-	err := store.Set(context.Background(), "key", obj)
+	err := store.Get(context.Background(), "key", &Obj{})
+	assert.NotNilf(t, err, "expected cache miss error, got %v", err)
+	assert.True(t, cache.IsCacheMissErr(err))
+
+	obj := Obj{V: "value", Ts: time.Now(), id: uuid.New()}
+	err = store.Set(context.Background(), "key", obj)
 	assert.Nil(t, err)
 
 	var updatedObj Obj

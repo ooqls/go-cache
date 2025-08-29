@@ -10,6 +10,16 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+func Register(types ...any) {
+	for _, t := range types {
+		if t == nil {
+			continue
+		}
+
+		gob.Register(t)
+	}
+}
+
 //go:generate mockgen -source=store.go -destination=store_mock.go -package=store GenericInterface
 type GenericInterface interface {
 	Set(ctx context.Context, key string, value any) error
@@ -77,7 +87,7 @@ func (s *RedisStore) Get(ctx context.Context, key string, target any) error {
 		return err
 	}
 
-	dec := gob.NewDecoder(bytes.NewReader([]byte(res)))
+	dec := gob.NewDecoder(bytes.NewBuffer([]byte(res)))
 	return dec.Decode(target)
 }
 
