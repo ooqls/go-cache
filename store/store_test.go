@@ -31,7 +31,7 @@ func TestRedisStore(t *testing.T) {
 	testutils.InitRedis()
 	Register(Obj{}, MyAlias{})
 
-	var store GenericInterface = NewRedisStore(redis.GetConnection(), 450*time.Second, "test")
+	var store GenericInterface = NewRedisStore("test", *redis.GetConnection(), 450*time.Second)
 
 	err := store.Get(context.Background(), "key", &Obj{})
 	assert.NotNilf(t, err, "expected cache miss error, got %v", err)

@@ -63,17 +63,17 @@ func (s *MemStore) Delete(ctx context.Context, key string) error {
 }
 
 type RedisStore struct {
-	db        *redis.Client
+	db        redis.Client
 	ttl       time.Duration
-	storeName string
+	storeKey string
 }
 
-func NewRedisStore(db *redis.Client, ttl time.Duration, storeName string) GenericInterface {
-	return &RedisStore{db: db, ttl: ttl, storeName: storeName}
+func NewRedisStore(storeKey string, db redis.Client, ttl time.Duration) GenericInterface {
+	return &RedisStore{db: db, ttl: ttl, storeKey: storeKey}
 }
 
 func (s *RedisStore) getKey(key string) string {
-	return fmt.Sprintf("%s/%s", s.storeName, key)
+	return fmt.Sprintf("%s/%s", s.storeKey, key)
 }
 
 func (s *RedisStore) Set(ctx context.Context, key string, value any) error {
