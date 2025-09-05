@@ -22,6 +22,13 @@ func TestMemCache_map(t *testing.T) {
 	derefO := *cachedO
 	assert.Nilf(t, err, "should not get an error when getting from cache")
 	assert.Equal(t, derefO["a"], o["a"])
+
+	err = c.Delete(context.Background(), "key")
+	assert.Nilf(t, err, "should not get an error when deleting from cache")
+
+	cachedO, err = c.Get(context.Background(), "key")
+	assert.NotNilf(t, err, "should get an error when getting from cache")
+	assert.Truef(t, IsCacheMissErr(err), "should get a cache miss error")
 }
 
 func TestMemCache_bool(t *testing.T) {

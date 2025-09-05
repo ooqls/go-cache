@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"fmt"
 
 	"github.com/eko/gocache/lib/v4/cache"
 )
@@ -33,7 +32,7 @@ func (c *Cache[T]) Set(ctx context.Context, key string, val T) error {
 func (c *Cache[T]) Get(ctx context.Context, key string) (*T, error) {
 	payload, err := c.c.Get(ctx, key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get item from cache: %v", err)
+		return nil, err
 	}
 
 	dec := gob.NewDecoder(bytes.NewBuffer(payload))
