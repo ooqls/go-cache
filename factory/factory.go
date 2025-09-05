@@ -13,6 +13,10 @@ type CacheFactory interface {
 	NewStore(key string, ttl time.Duration) store.GenericInterface
 }
 
+func NewCacheFactory(rc redis.Client) CacheFactory {
+	return &RedisCacheFactory{rc: rc}
+}
+
 type RedisCacheFactory struct {
 	rc redis.Client
 }
@@ -23,6 +27,10 @@ func (f *RedisCacheFactory) NewCache(key string, ttl time.Duration) cache.Generi
 
 func (f *RedisCacheFactory) NewStore(key string, ttl time.Duration) store.GenericInterface {
 	return store.NewRedisStore(key, f.rc, ttl)
+}
+
+func NewMemCacheFactory() CacheFactory {
+	return &MemCacheFactory{}
 }
 
 type MemCacheFactory struct{}
