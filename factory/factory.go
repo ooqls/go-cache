@@ -13,7 +13,7 @@ type CacheFactory interface {
 	NewStore(key string, ttl time.Duration) store.GenericInterface
 }
 
-func NewCacheFactory(rc redis.Client) CacheFactory {
+func NewRedisCacheFactory(rc redis.Client) CacheFactory {
 	return &RedisCacheFactory{rc: rc}
 }
 
